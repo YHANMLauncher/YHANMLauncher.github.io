@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>ЮхаЛаунчер — Ванильный Minecraft, но быстрый</title>
+<style>
+  @font-face {
+    font-family: 'Minecraft';
+    src: url('https://raw.githubusercontent.com/IdreesInc/Minecraft-Font/main/Minecraft-Bold.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --bg-dark: #0a0e14;
+    --bg-card: #121a26;
+    --accent: #55ff55;
+    --accent-dim: #3a9e3a;
+    --gold: #ffaa00;
+    --diamond: #55ffff;
+    --redstone: #ff5555;
+    --text: #e0e0e0;
+    --muted: #7a8a9a;
+    --border: #2a3a4a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    min-width: 1100px;   /* ПК-ориентир, без мобильной вёрстки */
+  }
+
+  body {
+    font-family: 'Minecraft', 'Courier New', monospace;
+    background: var(--bg-dark);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+    image-rendering: pixelated;
+    position: relative;
+  }
+
+  /* ============================================================
+     ФОНОВЫЙ СЛОЙ: картинка + впаянные мобы
+     ============================================================ */
+  .bg-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  .bg-stage .photo {
+    position: absolute;
+    inset: 0;
+    background-image: url('https://images.unsplash.com/photo-1607853202273-797f1c22a38e?q=80&w=1920&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.22) saturate(0.7) blur(1px);
+  }
+
+  .bg-stage .shade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      rgba(10,14,20,0.55) 0%,
+      rgba(10,14,20,0.75) 40%,
+      rgba(10,14,20,0.92) 100%);
+  }
+
+  .bg-stage .mob {
+    position: absolute;
+    object-fit: contain;
+    image-rendering: pixelated;
+    opacity: 0.85;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,0.7));
+    pointer-events: none;
+    animation: bob 7s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(var(--rot, 0deg)); }
+    50%      { transform: translateY(-8px) rotate(var(--rot, 0deg)); }
+  }
+
+  .bg-stage .a1 { top: 4%;    left: 2%;   width: 150px; --rot: -8deg;  }
+  .bg-stage .a2 { top: 10%;   right: 2%;  width: 160px; --rot: 10deg;  animation-delay: -1.5s; }
+  .bg-stage .a3 { top: 26%;   left: 4%;   width: 120px; --rot: 6deg;   animation-delay: -3s; }
+  .bg-stage .a4 { top: 38%;   right: 3%;  width: 150px; --rot: -12deg; animation-delay: -2s; }
+  .bg-stage .a5 { top: 54%;   left: 3%;   width: 130px; --rot: 4deg;   animation-delay: -4s; }
+  .bg-stage .a6 { top: 66%;   right: 4%;  width: 140px; --rot: -6deg;  animation-delay: -0.8s; }
+  .bg-stage .a7 { top: 82%;   left: 2%;   width: 150px; --rot: 8deg;   animation-delay: -2.6s; }
+  .bg-stage .a8 { top: 90%;   right: 3%;  width: 130px; --rot: -10deg; animation-delay: -5s; }
+  .bg-stage .a9 { top: 118%;  left: 5%;   width: 120px; --rot: 12deg;  animation-delay: -1s; }
+  .bg-stage .a10{ top: 130%;  right: 6%;  width: 140px; --rot: -8deg;  animation-delay: -3.4s; }
+  .bg-stage .a11{ top: 150%;  left: 3%;   width: 130px; --rot: 6deg;   animation-delay: -2.2s; }
+  .bg-stage .a12{ top: 162%;  right: 4%;  width: 150px; --rot: -14deg; animation-delay: -4.6s; }
+
+  /* ===== КОНТЕНТ ===== */
+  .wrap {
+    position: relative;
+    z-index: 2;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 20px 120px;
+  }
+
+  /* ===== ЗАГОЛОВОК ===== */
+  .hero {
+    text-align: center;
+    margin-bottom: 55px;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 7px 18px;
+    background: rgba(85, 255, 85, 0.1);
+    border: 2px solid var(--accent-dim);
+    color: var(--accent);
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .hero h1 {
+    font-size: 3.8rem;
+    color: #fff;
+    text-shadow: 3px 3px 0 #2a5a2a, 6px 6px 0 rgba(0,0,0,0.45);
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+    line-height: 1.15;
+  }
+  .hero .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    letter-spacing: 2px;
+  }
+
+  /* ===== БЛОКИ ===== */
+  .block-section {
+    background: rgba(18, 26, 38, 0.92);
+    border: 3px solid var(--border);
+    padding: 32px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.03);
+    backdrop-filter: blur(2px);
+  }
+  .block-section h2 {
+    font-size: 1.05rem;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .block-section h2 .icon { font-size: 1.4rem; }
+  .block-section > p {
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.85;
+    margin-bottom: 14px;
+  }
+  .block-section > p:last-child { margin-bottom: 0; }
+
+  /* Подсказка по центру */
+  .download-hint {
+    text-align: center;
+    margin-bottom: 20px !important;
+  }
+
+  /* ===== ФИЧИ ===== */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .feature-block {
+    background: rgba(255,255,255,0.02);
+    border: 2px solid var(--border);
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .feature-block:hover { border-color: var(--accent-dim); }
+  .feature-block .icon { font-size: 1.7rem; display: block; margin-bottom: 8px; }
+  .feature-block b { display: block; font-size: 0.8rem; color: var(--text); margin-bottom: 6px; }
+  .feature-block small { font-size: 0.68rem; color: var(--muted); line-height: 1.6; display: block; }
+
+  /* ===== ТАБЛИЦА ===== */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.74rem;
+  }
+  .compare-table th {
+    background: rgba(85, 255, 85, 0.08);
+    color: var(--accent);
+    padding: 12px;
+    text-align: left;
+    border: 2px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .compare-table td {
+    padding: 11px 12px;
+    border: 2px solid var(--border);
+    color: var(--muted);
+  }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.03); }
+  .check { color: var(--accent); }
+  .cross { color: var(--redstone); }
+
+  /* ===== КНОПКА ===== */
+  .download-area { text-align: center; margin-top: 10px; }
+  .download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 460px;
+    padding: 20px 32px;
+    font-family: 'Minecraft', monospace;
+    font-size: 0.98rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #0a0e14;
+    background: var(--accent);
+    border: 3px solid #2a5a2a;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+    box-shadow: 0 5px 0 #2a5a2a;
+    position: relative;
+    overflow: hidden;
+  }
+  .download-btn:hover {
+    background: #77ff77;
+    transform: translateY(-2px);
+    box-shadow: 0 7px 0 #2a5a2a;
+  }
+  .download-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #2a5a2a;
+  }
+  .download-btn:disabled {
+    background: #4a6a4a;
+    box-shadow: 0 3px 0 #2a3a2a;
+    cursor: wait;
+    transform: none;
+  }
+  .download-btn .icon { font-size: 1.2rem; }
+
+  .btn-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: var(--gold);
+    width: 0%;
+    transition: width 0.2s ease;
+  }
+
+  .status-text {
+    margin-top: 15px;
+    font-size: 0.74rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    min-height: 20px;
+  }
+  .status-text.active { color: var(--accent); }
+  .status-text.done { color: var(--gold); }
+
+  .meta-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 22px;
+  }
+  .meta-info span {
+    padding: 7px 13px;
+    background: rgba(255,255,255,0.03);
+    border: 2px solid var(--border);
+    font-size: 0.64rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* ===== ФУТЕР ===== */
+  footer {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 2px solid var(--border);
+    margin-top: 40px;
+    font-size: 0.64rem;
+    color: var(--muted);
+    line-height: 2;
+    letter-spacing: 1px;
+  }
+  footer a { color: var(--accent-dim); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     ФОН + МОБЫ
+     ============================================================ -->
+<div class="bg-stage" aria-hidden="true">
+  <div class="photo"></div>
+  <div class="shade"></div>
+
+  <img class="mob a1"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG55.png" alt="">
+  <img class="mob a2"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG75.png" alt="">
+  <img class="mob a3"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG78.png" alt="">
+  <img class="mob a4"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG60.png" alt="">
+  <img class="mob a5"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG91.png" alt="">
+  <img class="mob a6"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG92.png" alt="">
+  <img class="mob a7"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG55.png" alt="">
+  <img class="mob a8"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG75.png" alt="">
+  <img class="mob a9"  src="https://pngimg.com/uploads/minecraft/minecraft_PNG78.png" alt="">
+  <img class="mob a10" src="https://pngimg.com/uploads/minecraft/minecraft_PNG60.png" alt="">
+  <img class="mob a11" src="https://pngimg.com/uploads/minecraft/minecraft_PNG55.png" alt="">
+  <img class="mob a12" src="https://pngimg.com/uploads/minecraft/minecraft_PNG91.png" alt="">
+</div>
+
+<!-- ============================================================
+     КОНТЕНТ
+     ============================================================ -->
+<div class="wrap">
+
+  <div class="hero">
+    <div class="hero-badge">Minecraft · Ванильный · Оптимизированный</div>
+    <h1>ЮхаЛаунчер</h1>
+    <div class="subtitle">Чистая ваниль. Без модов. Без лагов.</div>
+  </div>
+
+  <div class="block-section">
+    <h2><span class="icon">⛏</span> Что это такое</h2>
+    <p>
+      ЮхаЛаунчер — это не сборка с модами и не форк с сотней лишних функций.
+      Это <strong style="color: var(--text);">чистый ванильный Minecraft</strong>, но с оптимизированным ядром запуска.
+      Мы не добавляем мобов, блоки или механики — мы убираем лаги, ускоряем загрузку чанков
+      и снижаем потребление памяти.
+    </p>
+    <p>
+      Ты играешь в тот самый Minecraft, который знаешь, но он работает
+      <strong style="color: var(--accent);">быстрее и стабильнее</strong>.
+      Никаких сторонних модов, никаких изменений в геймплее. Только скорость.
+    </p>
+  </div>
+
+  <div class="block-section">
+    <h2><span class="icon">⚡</span> Что оптимизировано</h2>
+    <div class="features-grid">
+      <div class="feature-block">
+        <span class="icon">🚀</span>
+        <b>Быстрый запуск</b>
+        <small>Ядро инициализируется за секунды вместо десятков секунд.</small>
+      </div>
+      <div class="feature-block">
+        <span class="icon">💾</span>
+        <b>Меньше RAM</b>
+        <small>Оптимизация памяти снижает потребление на 30–40%.</small>
+      </div>
+      <div class="feature-block">
+        <span class="icon">🌍</span>
+        <b>Быстрые чанки</b>
+        <small>Чанки грузятся плавнее, без рывков при полёте.</small>
+      </div>
+      <div class="feature-block">
+        <span class="icon">🔧</span>
+        <b>Без модов</b>
+        <small>Чистая ваниль. Никаких сторонних библиотек и патчей.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="block-section">
+    <h2><span class="icon">📊</span> Ваниль vs ЮхаЛаунчер</h2>
+    <table class="compare-table">
+      <tr>
+        <th>Параметр</th>
+        <th>Обычный запуск</th>
+        <th>ЮхаЛаунчер</th>
+      </tr>
+      <tr>
+        <td>Время запуска</td>
+        <td>30–60 сек</td>
+        <td class="check">5–15 сек (только загрузка версий долговатоя)</td>
+      </tr>
+      <tr>
+        <td>Потребление RAM</td>
+        <td>4–6 ГБ</td>
+        <td class="check">2–3 ГБ</td>
+      </tr>
+      <tr>
+        <td>Загрузка чанков</td>
+        <td>Рывками</td>
+        <td class="check">Плавно</td>
+      </tr>
+      <tr>
+        <td>Моды</td>
+        <td>Есть</td>
+        <td class="cross">Только ваниль</td>
+      </tr>
+      <tr>
+        <td>Изменения геймплея</td>
+        <td>Через моды</td>
+        <td class="check">Ыы Лаунчер красивый ыы :)</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="block-section">
+    <h2><span class="icon">⬇</span> Скачать установщик</h2>
+    <p class="download-hint">Нажми кнопку — файл начнёт качаться сразу, без открытия страниц.</p>
+
+    <div class="download-area">
+      <button class="download-btn" id="downloadBtn">
+        <span class="icon">⬇</span>
+        <span id="btnText">Скачать установщик</span>
+        <div class="btn-progress" id="btnProgress"></div>
+      </button>
+
+      <div class="status-text" id="status">Готов · Windows 10/11 · ~48 МБ</div>
+
+      <div class="meta-info">
+        <span>v2.4.1</span>
+        <span>Windows / macOS / Linux</span>
+        <span>Java 17+</span>
+        <span>Бесплатно</span>
+        <span>Обновления в ТГК https://t.me/PlayImbaLand</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 YHANM's core · Неофициальный продукт. Minecraft — торговая марка Mojang.<br>
+    Скачивая, вы принимаете условия использования.
+  </footer>
+
+</div>
+
+<script>
+  /* ============================================================
+     ЗАМЕНИТЕ ССЫЛКУ НА РЕАЛЬНЫЙ ФАЙЛ УСТАНОВЩИКА
+     ============================================================ */
+  const DOWNLOAD_URL = "https://drive.google.com/uc?export=download&id=1z1_F0pUMnDkbcmCASqH1qcxfqVj7fx--&confirm=t";
+
+  const btn = document.getElementById("downloadBtn");
+  const btnText = document.getElementById("btnText");
+  const status = document.getElementById("status");
+  const progress = document.getElementById("btnProgress");
+
+  btn.addEventListener("click", () => {
+    const a = document.createElement("a");
+    a.href = DOWNLOAD_URL;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    btn.disabled = true;
+    btnText.textContent = "Загрузка…";
+    status.textContent = "Файл качается. Проверь папку «Загрузки».";
+    status.className = "status-text active";
+
+    let p = 0;
+    const t = setInterval(() => {
+      p += Math.random() * 15;
+      if (p >= 100) {
+        clearInterval(t);
+        progress.style.width = "100%";
+        status.textContent = "Готово! Запусти установщик.";
+        status.className = "status-text done";
+        btnText.textContent = "Скачать снова";
+        btn.disabled = false;
+        setTimeout(() => { progress.style.width = "0%"; }, 1500);
+      } else {
+        progress.style.width = p + "%";
+        status.textContent = "Загрузка… " + Math.floor(p) + "%";
+      }
+    }, 400);
+  });
+</script>
+
+</body>
+</html>
